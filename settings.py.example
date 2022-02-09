@@ -1,0 +1,23 @@
+# The RPC to connect to.
+RPC_HOST = "https://bsc-dataseed.binance.org:443"
+
+# private key to your account.
+PRIVATE_KEY = ""
+
+# The gas price to use for transactions.
+GAS_PRICE_IN_WEI = 30
+
+# The timeout to give in seconds for transactions to confirm.
+TXN_TIMEOUT = 120
+
+# Minimum amount of new plants pending before performing action.
+MINIMUM_NEW_PLANTS = 10
+
+# How many minutes to wait before checking garden again.
+MINUTES_BETWEEN_UPDATES = 30
+
+# Max attempts to try to do action.
+MAX_TRIES = 5
+
+# Options: compound, sell.
+STARTING_ACTION = "compound"
