@@ -21,16 +21,17 @@ Python3.6+ Required!
 
 To install:
 
-pip install --upgrade setuptools wheel pip
-pip install -r requirements.txt
+```pip install --upgrade setuptools wheel pip```
+
+```pip install -r requirements.txt```
 
 To setup (copy settings.py.example to settings.py):
-cp settings.py.example settings.py
+```cp settings.py.example settings.py```
 
 After you adjust your settings.py, make sure you add your private key to the settings from Metamask.
 
 To use:
-python gardener.py
+```python gardener.py```
 
 Here are some of the drip.community/theanimal.farm contract addresses:
 
