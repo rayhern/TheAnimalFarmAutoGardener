@@ -31,12 +31,15 @@ def main():
     # TODO add session sold counter.
     # TODO calculate lp into usd worth.
     
+    claimed_counter = 0
+    compound_counter = 0
     while True:
-        
+        # loading previous session stats, so we know where we left off.
+        current_action, claimed_counter, compound_counter = load_stats()
+        logging.info('stats: %s, %s, %s' % (current_action, claimed_counter, compound_counter))
         # Get dogs info
         dogs_price = get_token_price('0xDBdC73B95cC0D5e7E99dC95523045Fc8d075Fb9e')
         pigs_price = get_token_price('0x3A4C15F96B3b058ab3Fb5FAf1440Cc19E7AE07ce')
-        
         # Get garden info.
         garden_data = get_garden_data(garden, max_tries=MAX_TRIES)
         if len(garden_data) == 0:
@@ -57,19 +60,28 @@ def main():
         logging.info('Seeds: %s. Plants: %s.' % (seed_count, plant_count))
         logging.info('New Plants: %s/%s.' % (new_plants, MINIMUM_NEW_PLANTS))
         logging.info('DOGS: $%s. PIGS: $%s.' % (decimal_round(dogs_price, 2), decimal_round(pigs_price, 2)))
-        logging.info('Unclaimed: %s. Claimed: %s.' % (unclaimed_lp, claimed_lp))
+        logging.info('Pending: %s. Claimed: %s.' % (unclaimed_lp, claimed_lp))
+        logging.info('Sold: %s. Planted: %s.' % (claimed_counter, compound_counter))
         response = ""
+        # Save stats before current action changes!
+        save_stats(current_action, claimed_counter, compound_counter)
         # Do actions in the garden.
         if new_plants > MINIMUM_NEW_PLANTS:
             if current_action == "compound":
                 current_action = "sell"
                 logging.info('Planting seeds (compounding)...')
                 response = garden.plant_seeds(max_tries=MAX_TRIES)
+                if response and "status" in response and response["status"] == 1:
+                    compound_counter += 1
             elif current_action == "sell":
                 current_action = "compound"
                 logging.info('Selling seeds...')
-                response = garden.sell_seeds_for_lp(max_tries=MAX_TRIES)
+                response = garden.sell_seeds(max_tries=MAX_TRIES)
+                if response and "status" in response and response["status"] == 1:
+                    claimed_counter += 1
             logging.debug('response: %s' % response)
+        # Save stats 1 more time to make sure we are up to date!
+        save_stats(current_action, claimed_counter, compound_counter)
         logging.info('Status: %s.' % random.choice(FARMING_PHRASES))
         time.sleep(MINUTES_BETWEEN_UPDATES * 60)
         
@@ -102,6 +114,24 @@ def get_token_price(token):
     price_dict = pancakeswap_api_get_price(token)
     token_price = Decimal(price_dict["data"]["price"])
     return token_price
+
+def save_stats(last_action, claimed, planted):
+    try:
+        with open('stats.log', 'w') as fp:
+            fp.write('%s,%s,%s\n' %(last_action, claimed, planted))
+    except:
+        logging.debug(traceback.format_exc())
+
+def load_stats():
+    try:
+        with open('stats.log', 'r') as fp:
+            temp_lines = fp.readlines()
+        stats_data = temp_lines[0].strip().split(',')
+    except:
+        stats_data = ["compound", 0, 0]
+        logging.debug(traceback.format_exc())
+    return stats_data
+    
 
 if __name__ == "__main__":
     main()
