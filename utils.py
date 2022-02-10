@@ -2,6 +2,7 @@ from web3 import Web3
 from decimal import Decimal
 import logging
 import traceback
+import requests
 
 def wei2eth(wei, unit="ether"):
     return Web3.fromWei(wei, unit)
@@ -38,3 +39,11 @@ def is_percent_up(previous_amount, current_amount, percent_up):
         return True
     else:
         return False
+    
+def pancakeswap_api_get_price(token_address):
+    # response example: {"updated_at":1644451690368,"data":{"name":"USD Coin","symbol":"USDC","price":"0.999362623429255457703972330882","price_BNB":"0.002364980172183089994929542565945"}}
+    try:
+        response = requests.get('https://api.pancakeswap.info/api/v2/tokens/%s' % token_address)
+        return response.json()
+    except:
+        return None

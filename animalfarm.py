@@ -12,7 +12,10 @@ import logging
 """
 
 ANIMAL_FARM_GARDEN_ABI_FILE = "./abis/Garden.json"
+ANIMAL_FARM_GARDEN_PAIR_ABI_FILE = "./abis/Pair.json"
+
 ANIMAL_FARM_GARDEN_ADDRESS = "0x685BFDd3C2937744c13d7De0821c83191E3027FF"
+ANIMAL_FARM_GARDEN_PAIR_ADDRESS = "0xa0feB3c81A36E885B6608DF7f0ff69dB97491b58"
 
 FARMING_PHRASES = [
     'Running the tractor...', 'It ain\'t much but it\'s honest work...', 
@@ -35,6 +38,7 @@ class Garden:
         self.garden_contract = self.w3.eth.contract(
             to_checksum(ANIMAL_FARM_GARDEN_ADDRESS), 
             abi=read_json_file(ANIMAL_FARM_GARDEN_ABI_FILE))
+        self.pair_abi = read_json_file(ANIMAL_FARM_GARDEN_PAIR_ABI_FILE)
         self.seeds_per_plant = None
     
     def get_seeds_per_plant(self):
@@ -104,6 +108,16 @@ class Garden:
                 time.sleep(10)
         return txn_receipt
     
+    def get_claimed_balance(self):
+        contract = self.get_pair_contract(ANIMAL_FARM_GARDEN_PAIR_ADDRESS)
+        return contract.functions.balanceOf(self.address).call()
+    
     def calculate_seed_sell(self, seeds):
         return self.garden_contract.functions.calculateSeedSell(seeds).call()
     
+    def get_token_contract(self, token_address):
+        return self.w3.eth.contract(Web3.toChecksumAddress(token_address), abi=self.erc20_abi)
+    
+    def get_pair_contract(self, pair_address):
+        return self.w3.eth.contract(
+            to_checksum(pair_address), abi=self.pair_abi)

@@ -5,7 +5,8 @@ import traceback
 from settings import *
 from animalfarm import Garden, FARMING_PHRASES
 from web3 import Web3
-from utils import decimal_round, eth2wei, wei2eth
+from utils import decimal_round, eth2wei, wei2eth, pancakeswap_api_get_price
+from decimal import Decimal
 import time
 import random
 
@@ -26,9 +27,21 @@ def main():
     # the method is to alternate between the two when minimum plants is reached.
     current_action = "compound"
     
+    # TODO add session compounded counter.
+    # TODO add session sold counter.
+    # TODO calculate lp into usd worth.
+    
     while True:
+        
+        # Get dogs info
+        dogs_price = get_token_price('0xDBdC73B95cC0D5e7E99dC95523045Fc8d075Fb9e')
+        pigs_price = get_token_price('0x3A4C15F96B3b058ab3Fb5FAf1440Cc19E7AE07ce')
+        
         # Get garden info.
         garden_data = get_garden_data(garden, max_tries=MAX_TRIES)
+        if len(garden_data) == 0:
+            time.sleep(10)
+            continue
         seed_count = garden_data.get('seeds', 0)
         plant_count = garden_data.get('plants', 0)
         seeds_per_plant = garden_data.get('seeds_per_plant', 0)
@@ -37,10 +50,14 @@ def main():
             new_plants = seed_count // seeds_per_plant
         else:
             new_plants = 0
-        lp_amount = garden_data.get('lp_amount', 0)
+        unclaimed_lp = garden_data.get('unclaimed_lp', 0)
+        claimed_lp = garden_data.get('claimed_lp', 0)
         # Report garden stats.
+        logging.info('----------------')
         logging.info('Seeds: %s. Plants: %s.' % (seed_count, plant_count))
-        logging.info('New Plants: %s/%s. LP: %s.' % (new_plants, MINIMUM_NEW_PLANTS, lp_amount))
+        logging.info('New Plants: %s/%s.' % (new_plants, MINIMUM_NEW_PLANTS))
+        logging.info('DOGS: $%s. PIGS: $%s.' % (decimal_round(dogs_price, 2), decimal_round(pigs_price, 2)))
+        logging.info('Unclaimed: %s. Claimed: %s.' % (unclaimed_lp, claimed_lp))
         response = ""
         # Do actions in the garden.
         if new_plants > MINIMUM_NEW_PLANTS:
@@ -53,7 +70,7 @@ def main():
                 logging.info('Selling seeds...')
                 response = garden.sell_seeds_for_lp(max_tries=MAX_TRIES)
             logging.debug('response: %s' % response)
-        logging.info(random.choice(FARMING_PHRASES))
+        logging.info('Status: %s.' % random.choice(FARMING_PHRASES))
         time.sleep(MINUTES_BETWEEN_UPDATES * 60)
         
 def get_garden_data(garden, max_tries=1):
@@ -66,7 +83,8 @@ def get_garden_data(garden, max_tries=1):
                 new_plants = seed_count // seeds_per_plant
             else:
                 new_plants = 0
-            lp_amount = decimal_round(wei2eth(garden.calculate_seed_sell(seed_count), "ether"), 4)
+            unclaimed_lp = decimal_round(Decimal(wei2eth(garden.calculate_seed_sell(seed_count))), 4)
+            claimed_lp = decimal_round(Decimal(wei2eth(garden.get_claimed_balance())), 4)
             break
         except:
             logging.debug(traceback.format_exc())
@@ -76,8 +94,14 @@ def get_garden_data(garden, max_tries=1):
         'plants': plant_count,
         'seeds_per_plant': seeds_per_plant,
         'new_plants': new_plants,
-        'lp_amount': lp_amount
+        'unclaimed_lp': unclaimed_lp,
+        'claimed_lp': claimed_lp
     }
+
+def get_token_price(token):
+    price_dict = pancakeswap_api_get_price(token)
+    token_price = Decimal(price_dict["data"]["price"])
+    return token_price
 
 if __name__ == "__main__":
     main()
