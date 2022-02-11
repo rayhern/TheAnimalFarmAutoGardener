@@ -43,10 +43,22 @@ def is_percent_up(previous_amount, current_amount, percent_up):
     else:
         return False
     
-def pancakeswap_api_get_price(token_address):
+def pancakeswap_api_get_price(token_address, max_tries=1):
     # response example: {"updated_at":1644451690368,"data":{"name":"USD Coin","symbol":"USDC","price":"0.999362623429255457703972330882","price_BNB":"0.002364980172183089994929542565945"}}
-    try:
-        response = requests.get('https://api.pancakeswap.info/api/v2/tokens/%s' % token_address)
-        return response.json()
-    except:
-        return None
+    for _ in range(max_tries):
+        try:
+            response = requests.get('https://api.pancakeswap.info/api/v2/tokens/%s' % token_address)
+            return response.json()
+        except:
+            logging.info(traceback.format_exc())
+    return None
+
+def binance_api_get_price(symbol, max_tries=1):
+    # example symbol, BNBBUSD
+    for _ in range(max_tries):
+        try:
+            response = requests.get('https://api.binance.com/api/v3/ticker/price?symbol=%s' % symbol)
+            return response.json()
+        except:
+            logging.info(traceback.format_exc())
+    return None

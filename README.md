@@ -21,22 +21,23 @@ Python3.6+ Required!
 
 To install:
 
-```pip install --upgrade setuptools wheel pip```
+`pip install --upgrade setuptools wheel pip`
 
-```pip install -r requirements.txt```
+`pip install -r requirements.txt`
 
 To setup (copy settings.py.example to settings.py):
-```cp settings.py.example settings.py```
+`cp settings.py.example settings.py`
 
 After you adjust your settings.py, make sure you add your private key to the settings from Metamask.
 
 To use:
-```python gardener.py```
+`python gardener.py`
 
 ```
 Here are some of the drip.community/theanimal.farm contract addresses:
 
-Faucet = 0xA38E0b7da56227bD9bA1cCf1Ff7D23aBA4807158
+DripFaucet = 0xFFE811714ab35360b67eE195acE7C10D93f89D8C
+DripLiquidity = 0x4Fe59AdcF621489cED2D674978132a54d432653A
 pL2 = 0x820ad100befe8a31c96098db23b1a0fa1b3f0ab4
 DRIP = 0x20f663CEa80FaCE82ACDFA3aAE6862d246cE0333
 BR34P = 0xa86d305A36cDB815af991834B46aD3d7FbB38523
