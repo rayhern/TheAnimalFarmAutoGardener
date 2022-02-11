@@ -10,9 +10,6 @@ def wei2eth(wei, unit="ether"):
 def eth2wei(eth, unit="ether"):
     return Web3.toWei(eth, unit)
 
-def nonce(address):
-    return Web3.eth.getTransactionCount(address)
-
 def to_checksum(address):
     return Web3.toChecksumAddress(address)
 
@@ -27,6 +24,12 @@ def read_json_file(filepath):
 
 def decimal_round(decimal_number, decimal_places):
     return decimal_number.quantize(Decimal(10) ** -decimal_places)
+
+def decimal_fix_places(decimal_number, decimals):
+    if decimals is not None:
+        return decimal_number / (10 ** decimals)
+    else:
+        raise Exception("decimal_fix_places(): Must supply a fixed amount of decimal places to fix number to.")
 
 def is_percent_down(previous_amount, current_amount, percent_down):
     if previous_amount - current_amount > Decimal(previous_amount) * (Decimal(percent_down) / Decimal(100)):
