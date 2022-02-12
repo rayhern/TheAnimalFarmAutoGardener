@@ -197,24 +197,52 @@ class AnimalFarmClient:
                 logging.debug(traceback.format_exc())
         return self.seeds_per_plant
     
-    def get_user_seeds(self, address):
-        return self.garden_contract.functions.getUserSeeds(address).call()
+    def get_user_seeds(self, address, max_tries=1):
+        for _ in range(max_tries):
+            try:
+                resp = self.garden_contract.functions.getUserSeeds(address).call()
+                return resp
+            except:
+                resp = None
+        return resp
     
-    def get_my_seeds(self):
-        return self.garden_contract.functions.getMySeeds().call()
+    def get_my_seeds(self, max_tries=1):
+        resp = None
+        for _ in range(max_tries):
+            try:
+                resp = self.garden_contract.functions.getMySeeds().call()
+                return resp
+            except:
+                continue
+        return resp
     
-    def get_my_plants(self):
-        return self.garden_contract.functions.getMyPlants().call()
+    def get_my_plants(self, max_tries=1):
+        for _ in range(max_tries):
+            try:
+                resp = self.garden_contract.functions.getMyPlants().call()
+                return resp
+            except:
+                resp = None
+        return resp
     
-    def get_contract_balance(self):
-        return self.garden_contract.functions.getBalance().call()
+    def get_contract_balance(self, max_tries=1):
+        resp = None
+        for _ in range(max_tries):
+            try:
+                resp = self.garden_contract.functions.getBalance().call()
+                return resp
+            except:
+                resp = None
+        return resp
     
-    def get_market_seeds(self):
-        try:
-            result = self.garden_contract.functions.marketSeeds().call()
-        except:
-            result = None
-            logging.debug(traceback.format_exc())
+    def get_market_seeds(self, max_tries=1):
+        result = None
+        for _ in range(max_tries):
+            try:
+                result = self.garden_contract.functions.marketSeeds().call()
+                return result
+            except:
+                result = None
         return result
     
     def plant_seeds(self, max_tries=1):
@@ -259,52 +287,68 @@ class AnimalFarmClient:
                 time.sleep(10)
         return txn_receipt
     
-    def get_claimed_balance(self):
+    def get_claimed_balance(self, max_tries):
         contract = self.get_pair_contract(ANIMAL_FARM_GARDEN_PAIR_ADDRESS)
-        return contract.functions.balanceOf(self.address).call()
+        resp = None
+        for _ in range(max_tries):
+            try:
+                resp = contract.functions.balanceOf(self.address).call()
+                return resp
+            except:
+                resp = None
+        return resp
     
     def deposit_drip_lp_farm(self, max_tries=1):
         lp_balance = self.get_claimed_balance()
-        self.approve(ANIMAL_FARM_GARDEN_PAIR_ADDRESS, type_="pair", pigs_or_dogs="dogs")
+        self.approve(ANIMAL_FARM_GARDEN_PAIR_ADDRESS, type_="pair", pigs_or_dogs="dogs", max_tries=max_tries)
+        # 2 is the pool id of the drip lp farm.
         result = self.deposit(2, lp_balance, pigs_or_dogs="dogs", max_tries=max_tries)
         return result
     
-    def calculate_seed_sell(self, seed_count):
-        try:
-            # get lp earned per day.
-            # result = wei2eth(self.garden_contract.functions.calculateSeedSell(plant_count * 86400).call())
-            # result = result * 0.95
-            result = wei2eth(self.garden_contract.functions.calculateSeedSell(seed_count).call())
-        except:
-            result = None
+    def calculate_seed_sell(self, seed_count, max_tries=1):
+        result = None
+        for _ in range(max_tries):
+            try:
+                result = wei2eth(self.garden_contract.functions.calculateSeedSell(seed_count).call())
+                return result
+            except:
+                result = None
         return result
     
-    def get_user_lp(self, seed_count):
-        result = self.calculate_seed_sell(seed_count) * Decimal(0.95)
+    def get_user_lp(self, seed_count, max_tries=1):
+        result = None
+        for _ in range(max_tries):
+            try:
+                result = self.calculate_seed_sell(seed_count) * Decimal(0.95)
+                return result
+            except:
+                result = None
         return result
     
-    def get_drip_busd_lp_price(self):
+    def get_drip_busd_lp_price(self, max_tries=1):
         """
         Calculate how much current lp is worth.
         """
-        try:
-            self.drip_busd["supply"] = wei2eth(self.garden_lp_contract.functions.totalSupply().call())
-            reserves = self.garden_lp_contract.functions.getReserves().call()
-            token0 = self.garden_lp_contract.functions.token0().call()
-            token1 = self.garden_lp_contract.functions.token1().call()
-            self.drip_busd["drip_reserve"] = self.fix_decimal(reserves[0], token_address=token0)
-            self.drip_busd["busd_reserve"] = self.fix_decimal(reserves[1], token_address=token1)
-            # Get actual price in USD from the pancakeswap api.
-            token0_price_data = pancakeswap_api_get_price(token0)
-            token1_price_data = pancakeswap_api_get_price(token1)
-            self.drip_busd["drip_price"] = Decimal(token0_price_data["data"]["price"])
-            self.drip_busd["busd_price"] = Decimal(token1_price_data["data"]["price"])
-            self.drip_busd["lp_ratio"] = Decimal(1 / self.drip_busd["supply"])
-            self.drip_busd["price"] = (self.drip_busd["drip_reserve"] * self.drip_busd["lp_ratio"] * self.drip_busd["drip_price"]) + \
-                (self.drip_busd["busd_reserve"] * self.drip_busd["lp_ratio"] * self.drip_busd["busd_price"])
-        except:
-            logging.info(traceback.format_exc())
-            return self.drip_busd
+        for _ in range(max_tries):
+            try:
+                self.drip_busd["supply"] = wei2eth(self.garden_lp_contract.functions.totalSupply().call())
+                reserves = self.garden_lp_contract.functions.getReserves().call()
+                token0 = self.garden_lp_contract.functions.token0().call()
+                token1 = self.garden_lp_contract.functions.token1().call()
+                self.drip_busd["drip_reserve"] = self.fix_decimal(reserves[0], token_address=token0)
+                self.drip_busd["busd_reserve"] = self.fix_decimal(reserves[1], token_address=token1)
+                # Get actual price in USD from the pancakeswap api.
+                token0_price_data = pancakeswap_api_get_price(token0)
+                token1_price_data = pancakeswap_api_get_price(token1)
+                self.drip_busd["drip_price"] = Decimal(token0_price_data["data"]["price"])
+                self.drip_busd["busd_price"] = Decimal(token1_price_data["data"]["price"])
+                self.drip_busd["lp_ratio"] = Decimal(1 / self.drip_busd["supply"])
+                self.drip_busd["price"] = (self.drip_busd["drip_reserve"] * self.drip_busd["lp_ratio"] * self.drip_busd["drip_price"]) + \
+                    (self.drip_busd["busd_reserve"] * self.drip_busd["lp_ratio"] * self.drip_busd["busd_price"])
+                break
+            except:
+                logging.info(traceback.format_exc())
+                return self.drip_busd
         return self.drip_busd
     
     def get_token_contract(self, token_address):
@@ -389,16 +433,19 @@ class AnimalFarmClient:
                 logging.info(traceback.format_exc())
         return txn_receipt
     
-    def get_pool_user_info(self, pool_id, pigs_or_dogs="pigs"):
-        # Get reward info from pools
+    def get_pool_user_info(self, pool_id, pigs_or_dogs="pigs", max_tries=1):
+        pool_dict = {}
         contract = self.get_pool_contract(pigs_or_dogs=pigs_or_dogs)
-        try:
-            pool_data = contract.functions.userInfo(pool_id, to_checksum(self.address)).call()
-            amount, reward, reward_locked, next_harvest = pool_data
-            amount = wei2eth(amount)
-            reward = wei2eth(reward)
-            reward_locked = wei2eth(reward_locked)
-        except:
-            logging.debug(traceback.format_exc())
-            amount = reward = reward_locked = next_harvest = None
-        return {"amount": amount, "reward": reward, "reward_locked": reward_locked, "next_harvest": next_harvest}
+        for _ in range(max_tries):
+            try:
+                pool_data = contract.functions.userInfo(pool_id, to_checksum(self.address)).call()
+                amount, reward, reward_locked, next_harvest = pool_data
+                amount = wei2eth(amount)
+                reward = wei2eth(reward)
+                reward_locked = wei2eth(reward_locked)
+                pool_dict = {"amount": amount, "reward": reward, "reward_locked": reward_locked, "next_harvest": next_harvest}
+                break
+            except:
+                logging.debug(traceback.format_exc())
+                pool_dict = {}
+        return pool_dict

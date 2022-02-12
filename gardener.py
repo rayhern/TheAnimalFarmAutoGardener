@@ -162,7 +162,7 @@ def handle_pools(client):
             dict_key = "%s:dogs" % pool_id
             current_pool_dict = POOL_DICT[dict_key]
             # Get reward info from pools
-            reward_data = client.get_pool_user_info(pool_id, pigs_or_dogs="dogs")
+            reward_data = client.get_pool_user_info(pool_id, pigs_or_dogs="dogs", max_tries=MAX_TRIES)
             amount = decimal_round(Decimal(reward_data["amount"]), 4)
             logging.info('Pool: %s. Deposited: %s.' % (
                 current_pool_dict["symbol"], amount))
@@ -170,7 +170,7 @@ def handle_pools(client):
             dict_key = "%s:pigs" % pool_id
             current_pool_dict = POOL_DICT[dict_key]
             # Get reward info from pools
-            reward_data = client.get_pool_user_info(pool_id, pigs_or_dogs="pigs")
+            reward_data = client.get_pool_user_info(pool_id, pigs_or_dogs="pigs", max_tries=MAX_TRIES)
             amount = decimal_round(Decimal(reward_data["amount"]), 4)
             logging.info('Pool: %s. Deposited: %s.' % (
                 current_pool_dict["symbol"], amount))
