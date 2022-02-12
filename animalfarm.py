@@ -169,27 +169,6 @@ class AnimalFarmClient:
             logging.debug(traceback.format_exc())
         return result
     
-    def sell_seeds_for_lp(self, max_tries=1):
-        txn_receipt = None
-        for _ in range(max_tries):
-            try:
-                txn = self.garden_contract.functions.sellSeeds(self.address).buildTransaction({"gasPrice": eth2wei(self.gas_price, "gwei"), 
-                     "nonce": self.nonce()})
-                signed_txn = self.w3.eth.account.sign_transaction(txn, self.private_key)
-                txn = self.w3.eth.sendRawTransaction(signed_txn.rawTransaction)
-                txn_receipt = self.w3.eth.waitForTransactionReceipt(txn)
-                if txn_receipt and "status" in txn_receipt and txn_receipt["status"] == 1: 
-                    logging.info('Sold seeds successfully!')
-                    break
-                else:
-                    logging.info('Could not sell seeds.')
-                    logging.debug(txn_receipt)
-                    time.sleep(10)
-            except:
-                logging.debug(traceback.format_exc())
-                time.sleep(10)
-        return txn_receipt
-    
     def plant_seeds(self, max_tries=1):
         txn_receipt = None
         for _ in range(max_tries):
@@ -201,6 +180,27 @@ class AnimalFarmClient:
                 txn_receipt = self.w3.eth.waitForTransactionReceipt(txn)
                 if txn_receipt and "status" in txn_receipt and txn_receipt["status"] == 1: 
                     logging.info('Planted seeds successfully!')
+                    break
+                else:
+                    logging.info('Could not plant seeds.')
+                    logging.debug(txn_receipt)
+                    time.sleep(10)
+            except:
+                logging.debug(traceback.format_exc())
+                time.sleep(10)
+        return txn_receipt
+    
+    def sell_seeds(self, max_tries=1):
+        txn_receipt = None
+        for _ in range(max_tries):
+            try:
+                txn = self.garden_contract.functions.sellSeeds().buildTransaction({
+                    "gasPrice": eth2wei(self.gas_price, "gwei"), "nonce": self.nonce()})
+                signed_txn = self.w3.eth.account.sign_transaction(txn, self.private_key)
+                txn = self.w3.eth.sendRawTransaction(signed_txn.rawTransaction)
+                txn_receipt = self.w3.eth.waitForTransactionReceipt(txn)
+                if txn_receipt and "status" in txn_receipt and txn_receipt["status"] == 1: 
+                    logging.info('Sold seeds successfully!')
                     break
                 else:
                     logging.info('Could not sell seeds.')
@@ -313,6 +313,27 @@ class AnimalFarmClient:
             return pool_info
         except:
             logging.info(traceback.format_exc())
+            
+    def deposit(self, pool_id, amount, pigs_or_dogs="pigs", max_tries=1):
+        contract = self.get_pool_contract(pigs_or_dogs=pigs_or_dogs)
+        txn_receipt = None
+        for _ in range(max_tries):
+            try:
+                tx = contract.functions.deposit(pool_id, eth2wei(amount)).buildTransaction({
+                    "gasPrice": eth2wei(self.gas_price, "gwei"), "nonce": self.nonce()})
+                signed_txn = self.w3.eth.account.sign_transaction(txn, self.private_key)
+                txn = self.w3.eth.sendRawTransaction(signed_txn.rawTransaction)
+                txn_receipt = self.w3.eth.waitForTransactionReceipt(txn)
+                if txn_receipt and "status" in txn_receipt and txn_receipt["status"] == 1: 
+                    logging.info('Deposited into pool successfully!')
+                    return txn_receipt
+                else:
+                    logging.info('Could not deposit into pool.')
+                    logging.debug(txn_receipt)
+                    time.sleep(10)
+            except:
+                logging.info(traceback.format_exc())
+        return txn_receipt
     
     def get_pool_user_info(self, pool_id, pigs_or_dogs="pigs"):
         # Get reward info from pools

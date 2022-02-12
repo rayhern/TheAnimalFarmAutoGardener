@@ -93,7 +93,9 @@ def load_stats():
 def handle_garden(client):
     global CLAIMED_COUNTER, COMPOUND_COUNTER
     # loading previous session stats, so we know where we left off.
-    current_action, claimed_counter, compound_counter = load_stats()
+    current_action, CLAIMED_COUNTER, COMPOUND_COUNTER = load_stats()
+    CLAIMED_COUNTER = int(CLAIMED_COUNTER)
+    COMPOUND_COUNTER = int(COMPOUND_COUNTER)
     # Get dogs info
     dogs_price = get_token_price(DOGS_TOKEN_ADDRESS)
     pigs_price = get_token_price(PIGS_TOKEN_ADDRESS)
@@ -121,9 +123,9 @@ def handle_garden(client):
     logging.info('Sold: %s. Planted: %s. Next Action: %s.' % (CLAIMED_COUNTER, COMPOUND_COUNTER, current_action))
     response = ""
     # Save stats before current action changes!
-    save_stats(current_action, claimed_counter, compound_counter)
+    save_stats(current_action, CLAIMED_COUNTER, COMPOUND_COUNTER)
     # Do actions in the garden.
-    if new_plants > MINIMUM_NEW_PLANTS:
+    if new_plants >= MINIMUM_NEW_PLANTS:
         if current_action == "compound":
             current_action = "sell"
             logging.info('Planting seeds (compounding)...')
@@ -138,7 +140,7 @@ def handle_garden(client):
                 CLAIMED_COUNTER += 1
         logging.debug('response: %s' % response)
     # Save stats 1 more time to make sure we are up to date!
-    save_stats(current_action, claimed_counter, compound_counter)
+    save_stats(current_action, CLAIMED_COUNTER, COMPOUND_COUNTER)
 
 def handle_pools(client):
     global POOL_DICT
