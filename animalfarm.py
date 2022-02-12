@@ -449,3 +449,17 @@ class AnimalFarmClient:
                 logging.debug(traceback.format_exc())
                 pool_dict = {}
         return pool_dict
+    
+    def get_dogs_price(self):
+        price_data = pancakeswap_api_get_price(DOGS_TOKEN_ADDRESS)
+        if "data" in price_data and "price" in price_data["data"]:
+            return Decimal(price_data["data"]["price"])
+        else:
+            return None
+    
+    def get_pigs_price(self):
+        price_data = pancakeswap_api_get_price(PIGS_TOKEN_ADDRESS)
+        if "data" in price_data and "price" in price_data["data"]:
+            return Decimal(price_data["data"]["price"])
+        else:
+            return None

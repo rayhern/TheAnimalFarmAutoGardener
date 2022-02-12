@@ -35,7 +35,8 @@ def main():
         
         # take care of all the pools user is in! check settings.py
         handle_pools(client)
-
+        
+        logging.info('----------------')
         logging.info('%s' % random.choice(FARMING_PHRASES))
         time.sleep(MINUTES_BETWEEN_UPDATES * 60)
         
@@ -137,7 +138,7 @@ def handle_garden(client):
             if response and "status" in response and response["status"] == 1:
                 CLAIMED_COUNTER += 1
                 logging.info('Depositing seeds...')
-                response = client.deposit_drip_lp_farm()
+                response = client.deposit_drip_lp_farm(max_tries=MAX_TRIES)
                 if response and "status" in response and response["status"] == 1:
                     logging.info('Done!')
         logging.debug('response: %s' % response)
@@ -157,6 +158,9 @@ def handle_pools(client):
         POOL_DICT.update(dog_pools)
         save_json("pools.log", POOL_DICT)
     if len(POOL_DICT) > 0:
+        drip_busd_lp = client.get_drip_busd_lp_price()
+        pigs_price = client.get_pigs_price()
+        dogs_price = client.get_dogs_price()
         logging.info('----------------')
         for pool_id in DOGS_POOLS:
             dict_key = "%s:dogs" % pool_id
@@ -164,16 +168,33 @@ def handle_pools(client):
             # Get reward info from pools
             reward_data = client.get_pool_user_info(pool_id, pigs_or_dogs="dogs", max_tries=MAX_TRIES)
             amount = decimal_round(Decimal(reward_data["amount"]), 4)
-            logging.info('Pool: %s. Deposited: %s.' % (
-                current_pool_dict["symbol"], amount))
+            if pool_id == 2:
+                # drips/busd farm
+                usd_price = decimal_round(drip_busd_lp["price"] * amount, 2)
+                logging.info("%s: %s ($%s). " % (
+                    current_pool_dict["symbol"], amount, usd_price))
+            elif pool_id == 3:
+                # single stake dogs pool
+                usd_price = decimal_round(dogs_price * amount, 2)
+                logging.info("%s: %s ($%s). " % (
+                    current_pool_dict["symbol"], amount, usd_price))
+            else:
+                logging.info("%s: %s." % (
+                    current_pool_dict["symbol"], amount))
         for pool_id in PIGS_POOLS:
             dict_key = "%s:pigs" % pool_id
             current_pool_dict = POOL_DICT[dict_key]
             # Get reward info from pools
             reward_data = client.get_pool_user_info(pool_id, pigs_or_dogs="pigs", max_tries=MAX_TRIES)
             amount = decimal_round(Decimal(reward_data["amount"]), 4)
-            logging.info('Pool: %s. Deposited: %s.' % (
-                current_pool_dict["symbol"], amount))
+            if pool_id == 0:
+                # pigs in the pigpen.
+                usd_price = decimal_round(pigs_price * amount, 2)
+                logging.info("%s: %s ($%s). " % (
+                    current_pool_dict["symbol"], amount, usd_price))
+            else:
+                logging.info("%s: %s. " % (
+                    current_pool_dict["symbol"], amount))
     
 def save_json(filename, dict_obj):
     try:
