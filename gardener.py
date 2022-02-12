@@ -28,9 +28,7 @@ def main():
     client = AnimalFarmClient(
         PRIVATE_KEY, txn_timeout=TXN_TIMEOUT, gas_price=GAS_PRICE_IN_WEI, rpc_host=RPC_HOST)
 
-    # bottom_price = client.bottom_price()
-    # logging.info(bottom_price)
-    
+
     while True:
         # handle the garden actions.
         handle_garden(client)
@@ -138,6 +136,10 @@ def handle_garden(client):
             response = client.sell_seeds(max_tries=MAX_TRIES)
             if response and "status" in response and response["status"] == 1:
                 CLAIMED_COUNTER += 1
+                logging.info('Depositing seeds...')
+                response = client.deposit_drip_lp_farm()
+                if response and "status" in response and response["status"] == 1:
+                    logging.info('Done!')
         logging.debug('response: %s' % response)
     # Save stats 1 more time to make sure we are up to date!
     save_stats(current_action, CLAIMED_COUNTER, COMPOUND_COUNTER)

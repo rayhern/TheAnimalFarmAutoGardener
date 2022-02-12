@@ -56,6 +56,7 @@ ERC20_ABI_FILE = "./abis/ERC20.json"
 
 ANIMAL_FARM_GARDEN_ADDRESS = "0x685BFDd3C2937744c13d7De0821c83191E3027FF"
 ANIMAL_FARM_GARDEN_PAIR_ADDRESS = "0xa0feB3c81A36E885B6608DF7f0ff69dB97491b58"
+ANIMAL_FARM_DRIP_PAIR_ADDRESS = "0xa0feB3c81A36E885B6608DF7f0ff69dB97491b58"
 
 # 0xe5d9c56B271bc7820Eee01BCC99E593e3e7bAD44
 ANIMAL_FARM_DOGS_ADDRESS = "0xe5d9c56B271bc7820Eee01BCC99E593e3e7bAD44"
@@ -123,6 +124,53 @@ class AnimalFarmClient:
     def handle_event(self, event):
         """2022-02-07 17:14:56,554: AttributeDict({'args': AttributeDict({'tokenId': 118733, 'auctionId': 709987, 'totalPrice': 48000000000000000000, 'winner': '0x5E1af805f2c10dCE86bb610BADd6445F92921163'}), 'event': 'AuctionSuccessful', 'logIndex': 24, 'transactionIndex': 2, 'transactionHash': HexBytes('0x6c5f995d12b2a56df30616e453351b8a1b4597f83b73668a5eda078cfb6768cb'), 'address': '0x13a65B9F8039E2c032Bc022171Dc05B30c3f2892', 'blockHash': HexBytes('0x0cf76ca5ccbbfb5e2731422c15e9c23105e817cee7e9fa501da52789e0e800d4'), 'blockNumber': 22702673})"""
         logging.info(event)
+        
+    def approve(self, contract_address, type_="token", pigs_or_dogs="pigs", max_tries=1):
+        txn_receipt = None
+        public_key = self.address
+        contract_address = Web3.toChecksumAddress(contract_address)
+        if type_ == "pair":
+            contract = self.w3.eth.contract(contract_address, abi=self.pair_abi)
+        elif type_ == "token":
+            contract = self.w3.eth.contract(contract_address, abi=self.erc20_abi)
+        if pigs_or_dogs == "pigs":
+            to_approve = ANIMAL_FARM_PIGS_ADDRESS
+        else:
+            to_approve = ANIMAL_FARM_DOGS_ADDRESS
+        approved = False
+        try:
+            approved = contract.functions.allowance(public_key, to_approve).call()
+            if int(approved) <= 500:
+                # we have not approved this token yet. approve!
+                for _ in range(max_tries):
+                    try:
+                        txn = contract.functions.approve(
+                            to_approve,
+                            115792089237316195423570985008687907853269984665640564039457584007913129639935
+                        ).buildTransaction(
+                            {
+                                'from': public_key, 
+                                'gasPrice': self.w3.toWei(self.gas_price, 'gwei'),
+                                'nonce': self.get_nonce()
+                            }
+                        )
+                        signed_txn = self.w3.eth.account.sign_transaction(txn, self.private_key)
+                        txn = self.w3.eth.sendRawTransaction(signed_txn.rawTransaction)
+                        txn_receipt = self.w3.eth.waitForTransactionReceipt(txn)
+                        if txn_receipt and "status" in txn_receipt and txn_receipt["status"] == 1: 
+                            logging.info('Approved successfully!')
+                            approved = True
+                            break
+                    except:
+                        logging.debug(traceback.format_exc())
+            else:
+                logging.debug('Contract %s already approved.' % contract_address)
+                approved = True
+        except:
+            logging.debug(traceback.format_exc())
+        if approved is False:
+            logging.debug('Could not approve contract: %s' % contract_address)
+        return approved
     
     def nonce(self):
         return self.w3.eth.getTransactionCount(self.address)
@@ -214,6 +262,12 @@ class AnimalFarmClient:
     def get_claimed_balance(self):
         contract = self.get_pair_contract(ANIMAL_FARM_GARDEN_PAIR_ADDRESS)
         return contract.functions.balanceOf(self.address).call()
+    
+    def deposit_drip_lp_farm(self, max_tries=1):
+        lp_balance = self.get_claimed_balance()
+        self.approve(ANIMAL_FARM_GARDEN_PAIR_ADDRESS, type_="pair", pigs_or_dogs="dogs")
+        result = self.deposit(2, lp_balance, pigs_or_dogs="dogs", max_tries=max_tries)
+        return result
     
     def calculate_seed_sell(self, seed_count):
         try:
@@ -319,7 +373,7 @@ class AnimalFarmClient:
         txn_receipt = None
         for _ in range(max_tries):
             try:
-                tx = contract.functions.deposit(pool_id, eth2wei(amount)).buildTransaction({
+                txn = contract.functions.deposit(pool_id, amount).buildTransaction({
                     "gasPrice": eth2wei(self.gas_price, "gwei"), "nonce": self.nonce()})
                 signed_txn = self.w3.eth.account.sign_transaction(txn, self.private_key)
                 txn = self.w3.eth.sendRawTransaction(signed_txn.rawTransaction)
