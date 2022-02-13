@@ -1,7 +1,7 @@
 # The RPC to connect to.
 RPC_HOST = "https://bsc-dataseed.binance.org:443"
 
-# private key to your account.
+# your account.
 PRIVATE_KEY = ""
 
 # The gas price to use for transactions.
@@ -11,13 +11,21 @@ GAS_PRICE_IN_WEI = 30
 TXN_TIMEOUT = 120
 
 # Minimum amount of new plants pending before performing action.
-MINIMUM_NEW_PLANTS = 10
+MINIMUM_NEW_PLANTS = 20
 
 # How many minutes to wait before checking garden again.
-MINUTES_BETWEEN_UPDATES = 30
+MINUTES_BETWEEN_UPDATES = 3
 
 # Max attempts to try to do action.
 MAX_TRIES = 5
 
-# Options: compound, sell.
-STARTING_ACTION = "compound"
+# Create any number of 'compound' and 'sell' items in the list to do them in order.
+# Once the end of the list has been reached, it will start from the beginning.
+# This is so that the compounding strategy can be further customized.
+ACTION_LIST = ["compound", "compound", "compound", "sell"]
+
+# "Dogs" pools to monitor. See the list of pool ids in animalfarm.py comments.
+DOGS_POOLS = [2, 3]
+
+# "Pigs" pools to monitor. See the list of pool ids in animalfarm.py comments.
+PIGS_POOLS = [0]

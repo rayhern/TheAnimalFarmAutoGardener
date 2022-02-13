@@ -81,14 +81,20 @@ def load_stats():
         with open('stats.log', 'r') as fp:
             temp_lines = fp.readlines()
         stats_data = temp_lines[0].strip().split(',')
+        stats_data[0] = int(stats_data[0])
+        if stats_data[0] >= len(ACTION_LIST) - 1:
+            stats_data[0] = 0
+        stats_data[1] = int(stats_data[1])
+        stats_data[2] = int(stats_data[2])
     except:
-        stats_data = ["compound", 0, 0]
+        stats_data = [0, 0, 0]
         logging.debug(traceback.format_exc())
     return stats_data
 
 def handle_garden(client):
     # loading previous session stats, so we know where we left off.
-    current_action, claimed_counter, compound_counter = load_stats()
+    action_index, claimed_counter, compound_counter = load_stats()
+    
     # Get dogs info
     dogs_price = get_token_price(DOGS_TOKEN_ADDRESS)
     pigs_price = get_token_price(PIGS_TOKEN_ADDRESS)
@@ -113,14 +119,14 @@ def handle_garden(client):
     logging.info('New Plants: %s/%s.' % (new_plants, MINIMUM_NEW_PLANTS))
     logging.info('DOGS: $%s. PIGS: $%s.' % (decimal_round(dogs_price, 2), decimal_round(pigs_price, 2)))
     logging.info('Pending: %s. Value: $%s.' % (unclaimed_lp, decimal_round(unclaimed_worth, 2)))
-    logging.info('Sold: %s. Planted: %s. Next Action: %s.' % (claimed_counter, compound_counter, current_action))
+    logging.info('Sold: %s. Planted: %s. Next Action: %s.' % (claimed_counter, compound_counter, ACTION_LIST[action_index]))
     response = ""
     # Save stats before current action changes!
-    save_stats(current_action, claimed_counter, compound_counter)
+    save_stats(action_index, claimed_counter, compound_counter)
     # Do actions in the garden.
     if new_plants >= MINIMUM_NEW_PLANTS:
-        if current_action == "compound":
-            current_action = "sell"
+        if ACTION_LIST[action_index] == "compound":
+            action_index += 1
             logging.info('Planting seeds (compounding)...')
             response = client.plant_seeds(max_tries=MAX_TRIES)
             if response and "status" in response and response["status"] == 1:
@@ -128,8 +134,8 @@ def handle_garden(client):
                 logging.info('Done!')
             else:
                 logging.info('There was a problem trying to plant seeds.')
-        elif current_action == "sell":
-            current_action = "compound"
+        elif ACTION_LIST[action_index] == "sell":
+            action_index += 1
             logging.info('Selling seeds...')
             response = client.sell_seeds(max_tries=MAX_TRIES)
             if response and "status" in response and response["status"] == 1:
@@ -142,7 +148,7 @@ def handle_garden(client):
                     logging.info('There was a problem depositing seeds into the drip/busd farm.')
         logging.debug('response: %s' % response)
     # Save stats 1 more time to make sure we are up to date!
-    save_stats(current_action, claimed_counter, compound_counter)
+    save_stats(action_index, claimed_counter, compound_counter)
 
 def handle_pools(client):
     global POOL_DICT
