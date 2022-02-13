@@ -13,8 +13,6 @@ import random
 VERSION = "1.0"
 
 POOL_DICT = {}
-CLAIMED_COUNTER = 0
-COMPOUND_COUNTER = 0
 
 def main():
     global POOL_DICT
@@ -53,19 +51,18 @@ def get_garden_data(garden, max_tries=1):
             unclaimed_lp = decimal_round(garden.get_user_lp(seed_count), 4)
             drip_busd_lp = garden.get_drip_busd_lp_price()
             unclaimed_worth = drip_busd_lp["price"] * unclaimed_lp
-            break
+            return {
+                'seeds': seed_count,
+                'plants': plant_count,
+                'seeds_per_plant': seeds_per_plant,
+                'new_plants': new_plants,
+                'unclaimed_lp': unclaimed_lp,
+                'unclaimed_worth': unclaimed_worth,
+                'drip_busd': drip_busd_lp
+            }
         except:
             logging.debug(traceback.format_exc())
             return {}
-    return {
-        'seeds': seed_count,
-        'plants': plant_count,
-        'seeds_per_plant': seeds_per_plant,
-        'new_plants': new_plants,
-        'unclaimed_lp': unclaimed_lp,
-        'unclaimed_worth': unclaimed_worth,
-        'drip_busd': drip_busd_lp
-    }
 
 def get_token_price(token):
     price_dict = pancakeswap_api_get_price(token)
@@ -90,11 +87,8 @@ def load_stats():
     return stats_data
 
 def handle_garden(client):
-    global CLAIMED_COUNTER, COMPOUND_COUNTER
     # loading previous session stats, so we know where we left off.
-    current_action, CLAIMED_COUNTER, COMPOUND_COUNTER = load_stats()
-    CLAIMED_COUNTER = int(CLAIMED_COUNTER)
-    COMPOUND_COUNTER = int(COMPOUND_COUNTER)
+    current_action, claimed_counter, compound_counter = load_stats()
     # Get dogs info
     dogs_price = get_token_price(DOGS_TOKEN_ADDRESS)
     pigs_price = get_token_price(PIGS_TOKEN_ADDRESS)
@@ -119,10 +113,10 @@ def handle_garden(client):
     logging.info('New Plants: %s/%s.' % (new_plants, MINIMUM_NEW_PLANTS))
     logging.info('DOGS: $%s. PIGS: $%s.' % (decimal_round(dogs_price, 2), decimal_round(pigs_price, 2)))
     logging.info('Pending: %s. Value: $%s.' % (unclaimed_lp, decimal_round(unclaimed_worth, 2)))
-    logging.info('Sold: %s. Planted: %s. Next Action: %s.' % (CLAIMED_COUNTER, COMPOUND_COUNTER, current_action))
+    logging.info('Sold: %s. Planted: %s. Next Action: %s.' % (claimed_counter, compound_counter, current_action))
     response = ""
     # Save stats before current action changes!
-    save_stats(current_action, CLAIMED_COUNTER, COMPOUND_COUNTER)
+    save_stats(current_action, claimed_counter, compound_counter)
     # Do actions in the garden.
     if new_plants >= MINIMUM_NEW_PLANTS:
         if current_action == "compound":
@@ -130,20 +124,25 @@ def handle_garden(client):
             logging.info('Planting seeds (compounding)...')
             response = client.plant_seeds(max_tries=MAX_TRIES)
             if response and "status" in response and response["status"] == 1:
-                COMPOUND_COUNTER += 1
+                compound_counter += 1
+                logging.info('Done!')
+            else:
+                logging.info('There was a problem trying to plant seeds.')
         elif current_action == "sell":
             current_action = "compound"
             logging.info('Selling seeds...')
             response = client.sell_seeds(max_tries=MAX_TRIES)
             if response and "status" in response and response["status"] == 1:
-                CLAIMED_COUNTER += 1
+                claimed_counter += 1
                 logging.info('Depositing seeds...')
                 response = client.deposit_drip_lp_farm(max_tries=MAX_TRIES)
                 if response and "status" in response and response["status"] == 1:
                     logging.info('Done!')
+                else:
+                    logging.info('There was a problem depositing seeds into the drip/busd farm.')
         logging.debug('response: %s' % response)
     # Save stats 1 more time to make sure we are up to date!
-    save_stats(current_action, CLAIMED_COUNTER, COMPOUND_COUNTER)
+    save_stats(current_action, claimed_counter, compound_counter)
 
 def handle_pools(client):
     global POOL_DICT
