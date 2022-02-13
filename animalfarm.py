@@ -54,16 +54,20 @@ ANIMAL_FARM_MASTER_CHEF_PIGS_ABI_FILE = "./abis/MasterChefPigs.json"
 ANIMAL_FARM_MASTER_CHEF_DOGS_ABI_FILE = "./abis/MasterChefDogs.json"
 ERC20_ABI_FILE = "./abis/ERC20.json"
 
+# Garden addresses
 ANIMAL_FARM_GARDEN_ADDRESS = "0x685BFDd3C2937744c13d7De0821c83191E3027FF"
 ANIMAL_FARM_GARDEN_PAIR_ADDRESS = "0xa0feB3c81A36E885B6608DF7f0ff69dB97491b58"
 ANIMAL_FARM_DRIP_PAIR_ADDRESS = "0xa0feB3c81A36E885B6608DF7f0ff69dB97491b58"
 
-# 0xe5d9c56B271bc7820Eee01BCC99E593e3e7bAD44
+# Pool/Farm addresses
 ANIMAL_FARM_DOGS_ADDRESS = "0xe5d9c56B271bc7820Eee01BCC99E593e3e7bAD44"
 ANIMAL_FARM_PIGS_ADDRESS = "0x932C5E1709a6895Bc455E799B03F43D3a8FfbD9A"
 
+# Tokens
 DOGS_TOKEN_ADDRESS = "0xDBdC73B95cC0D5e7E99dC95523045Fc8d075Fb9e"
 PIGS_TOKEN_ADDRESS = "0x3A4C15F96B3b058ab3Fb5FAf1440Cc19E7AE07ce"
+DRIP_TOKEN_ADDRESS = "0x20f663CEa80FaCE82ACDFA3aAE6862d246cE0333"
+
 
 FARMING_PHRASES = [
     'Running the tractor...', 'It ain\'t much but it\'s honest work...', 
@@ -451,6 +455,13 @@ class AnimalFarmClient:
     
     def get_pigs_price(self):
         price_data = pancakeswap_api_get_price(PIGS_TOKEN_ADDRESS)
+        if "data" in price_data and "price" in price_data["data"]:
+            return Decimal(price_data["data"]["price"])
+        else:
+            return None
+        
+    def get_drip_price(self):
+        price_data = pancakeswap_api_get_price(DRIP_TOKEN_ADDRESS)
         if "data" in price_data and "price" in price_data["data"]:
             return Decimal(price_data["data"]["price"])
         else:

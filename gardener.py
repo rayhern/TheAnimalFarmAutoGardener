@@ -21,7 +21,9 @@ def main():
     # Setup logger.
     log_format = '%(asctime)s: %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_format, stream=sys.stdout)
-    logging.info('honest work by Ray v%s Started!' % VERSION)
+    logging.info('Honest Work v%s Started!' % VERSION)
+    logging.info('----------------')
+    logging.info('Strategy: %s.' % ACTION_LIST)
     
     client = AnimalFarmClient(
         PRIVATE_KEY, txn_timeout=TXN_TIMEOUT, gas_price=GAS_PRICE_IN_WEI, rpc_host=RPC_HOST)
@@ -94,10 +96,10 @@ def load_stats():
 def handle_garden(client):
     # loading previous session stats, so we know where we left off.
     action_index, claimed_counter, compound_counter = load_stats()
-    
-    # Get dogs info
+    # Get token price info
     dogs_price = get_token_price(DOGS_TOKEN_ADDRESS)
     pigs_price = get_token_price(PIGS_TOKEN_ADDRESS)
+    drip_price = get_token_price(DRIP_TOKEN_ADDRESS)
     # Get garden info.
     garden_data = get_garden_data(client, max_tries=MAX_TRIES)
     if len(garden_data) == 0:
@@ -117,9 +119,12 @@ def handle_garden(client):
     logging.info('----------------')
     logging.info('Seeds: %s. Plants: %s.' % (seed_count, plant_count))
     logging.info('New Plants: %s/%s.' % (new_plants, MINIMUM_NEW_PLANTS))
-    logging.info('DOGS: $%s. PIGS: $%s.' % (decimal_round(dogs_price, 2), decimal_round(pigs_price, 2)))
     logging.info('Pending: %s. Value: $%s.' % (unclaimed_lp, decimal_round(unclaimed_worth, 2)))
-    logging.info('Sold: %s. Planted: %s. Next Action: %s.' % (claimed_counter, compound_counter, ACTION_LIST[action_index]))
+    logging.info('Sold: %s. Compounded: %s.' % (
+        claimed_counter, compound_counter))
+    logging.info('Next Action: %s. Position: %s.' % (ACTION_LIST[action_index], (action_index + 1)))
+    logging.info('DOGS:$%s. PIGS:$%s. DRIP:$%s.' % (
+        decimal_round(dogs_price, 2), decimal_round(pigs_price, 2), decimal_round(drip_price, 2)))
     response = ""
     # Save stats before current action changes!
     save_stats(action_index, claimed_counter, compound_counter)
@@ -140,12 +145,15 @@ def handle_garden(client):
             response = client.sell_seeds(max_tries=MAX_TRIES)
             if response and "status" in response and response["status"] == 1:
                 claimed_counter += 1
-                logging.info('Depositing seeds...')
-                response = client.deposit_drip_lp_farm(max_tries=MAX_TRIES)
-                if response and "status" in response and response["status"] == 1:
-                    logging.info('Done!')
-                else:
-                    logging.info('There was a problem depositing seeds into the drip/busd farm.')
+                # only deposit to drip farm if setting is set in settings.py
+                if DEPOSIT_TO_DRIP_FARM is True:
+                    logging.info('Depositing seeds...')
+                    response = client.deposit_drip_lp_farm(max_tries=MAX_TRIES)
+                    if response and "status" in response and response["status"] == 1:
+                        logging.info('Done!')
+                    else:
+                        logging.info(
+                            'There was a problem depositing seeds into the drip/busd farm.')
         logging.debug('response: %s' % response)
     # Save stats 1 more time to make sure we are up to date!
     save_stats(action_index, claimed_counter, compound_counter)

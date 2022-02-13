@@ -19,13 +19,17 @@ MINUTES_BETWEEN_UPDATES = 3
 # Max attempts to try to do action.
 MAX_TRIES = 5
 
+# If set to true, this will deposit claim from the Drip garden into the Drip farm in the farms section
+# on theanimal.farm. It will deposit to the farm every time it claims.
+DEPOSIT_TO_DRIP_FARM = True
+
 # Create any number of 'compound' and 'sell' items in the list to do them in order.
 # Once the end of the list has been reached, it will start from the beginning.
 # This is so that the compounding strategy can be further customized.
 ACTION_LIST = ["compound", "compound", "compound", "sell"]
 
-# "Dogs" pools to monitor. See the list of pool ids in animalfarm.py comments.
+# "Dogs" deposits pools/farms to monitor. See the list of pool ids in animalfarm.py comments.
 DOGS_POOLS = [2, 3]
 
-# "Pigs" pools to monitor. See the list of pool ids in animalfarm.py comments.
+# "Pigs" deposits pools/farm to monitor. See the list of pool ids in animalfarm.py comments.
 PIGS_POOLS = [0]
