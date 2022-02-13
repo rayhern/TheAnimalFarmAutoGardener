@@ -347,7 +347,7 @@ class AnimalFarmClient:
                     (self.drip_busd["busd_reserve"] * self.drip_busd["lp_ratio"] * self.drip_busd["busd_price"])
                 break
             except:
-                logging.info(traceback.format_exc())
+                logging.debug(traceback.format_exc())
                 return self.drip_busd
         return self.drip_busd
     
@@ -398,19 +398,11 @@ class AnimalFarmClient:
     
     def bottom_price(self, pigs_or_dogs="pigs"):
         try:
-            # start_block = contract.functions.emissionStartBlock().call()
-            # end_block = contract.functions.emissionEndBlock().call()
-            # total_blocks = end_block - start_block
-            # token_per_block = contract.functions.tokenPerBlock().call()
-            # logging.info('start block: %s' % start_block)
-            # logging.info('end block: %s' % end_block)
-            # logging.info('total blocks: %s' % total_blocks)
-            # logging.info('token per block: %s' % token_per_block)
             contract = self.get_token_contract("0xDBdC73B95cC0D5e7E99dC95523045Fc8d075Fb9e")
             pool_info = contract.functions.balanceOf(self.address).call()
             return pool_info
         except:
-            logging.info(traceback.format_exc())
+            logging.debug(traceback.format_exc())
             
     def deposit(self, pool_id, amount, pigs_or_dogs="pigs", max_tries=1):
         contract = self.get_pool_contract(pigs_or_dogs=pigs_or_dogs)
@@ -430,7 +422,7 @@ class AnimalFarmClient:
                     logging.debug(txn_receipt)
                     time.sleep(10)
             except:
-                logging.info(traceback.format_exc())
+                logging.debug(traceback.format_exc())
         return txn_receipt
     
     def get_pool_user_info(self, pool_id, pigs_or_dogs="pigs", max_tries=1):

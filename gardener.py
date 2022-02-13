@@ -5,7 +5,7 @@ import traceback
 from settings import *
 from animalfarm import *
 from web3 import Web3
-from utils import decimal_round, eth2wei, wei2eth, pancakeswap_api_get_price, to_checksum
+from utils import decimal_round, pancakeswap_api_get_price
 from decimal import Decimal
 import time
 import random
