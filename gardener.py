@@ -87,7 +87,7 @@ def load_stats():
             temp_lines = fp.readlines()
         stats_data = temp_lines[0].strip().split(',')
         stats_data[0] = int(stats_data[0])
-        if stats_data[0] >= len(ACTION_LIST) - 1:
+        if stats_data[0] >= len(ACTION_LIST):
             stats_data[0] = 0
         stats_data[1] = int(stats_data[1])
         stats_data[2] = int(stats_data[2])
