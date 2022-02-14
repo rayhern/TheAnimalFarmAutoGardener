@@ -52,6 +52,9 @@ def get_garden_data(garden, max_tries=1):
                 new_plants = 0
             unclaimed_lp = decimal_round(garden.get_user_lp(seed_count), 4)
             drip_busd_lp = garden.get_drip_busd_lp_price()
+            if drip_busd_lp is None:
+                time.sleep(30)
+                continue
             unclaimed_worth = drip_busd_lp["price"] * unclaimed_lp
             return {
                 'seeds': seed_count,
@@ -64,7 +67,7 @@ def get_garden_data(garden, max_tries=1):
             }
         except:
             logging.debug(traceback.format_exc())
-            return {}
+    return {}
 
 def get_token_price(token):
     price_dict = pancakeswap_api_get_price(token)
@@ -123,7 +126,8 @@ def handle_garden(client):
     logging.info('Sold: %s. Compounded: %s.' % (
         claimed_counter, compound_counter))
     logging.info('Next Action: %s. Position: %s.' % (ACTION_LIST[action_index], (action_index + 1)))
-    logging.info('DOGS:$%s. PIGS:$%s. DRIP:$%s.' % (
+    logging.info('----------------')
+    logging.info('DOGS:$%s PIGS:$%s DRIP:$%s' % (
         decimal_round(dogs_price, 2), decimal_round(pigs_price, 2), decimal_round(drip_price, 2)))
     response = ""
     # Save stats before current action changes!
