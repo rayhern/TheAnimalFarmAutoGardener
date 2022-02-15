@@ -291,7 +291,7 @@ class AnimalFarmClient:
                 time.sleep(10)
         return txn_receipt
     
-    def get_claimed_balance(self, max_tries):
+    def get_claimed_balance(self, max_tries=1):
         contract = self.get_pair_contract(ANIMAL_FARM_GARDEN_PAIR_ADDRESS)
         resp = None
         for _ in range(max_tries):
@@ -303,7 +303,7 @@ class AnimalFarmClient:
         return resp
     
     def deposit_drip_lp_farm(self, max_tries=1):
-        lp_balance = self.get_claimed_balance()
+        lp_balance = self.get_claimed_balance(max_tries=max_tries)
         self.approve(ANIMAL_FARM_GARDEN_PAIR_ADDRESS, type_="pair", pigs_or_dogs="dogs", max_tries=max_tries)
         # 2 is the pool id of the drip lp farm.
         result = self.deposit(2, lp_balance, pigs_or_dogs="dogs", max_tries=max_tries)
