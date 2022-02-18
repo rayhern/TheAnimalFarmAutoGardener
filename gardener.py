@@ -14,6 +14,8 @@ VERSION = "1.0"
 
 POOL_DICT = {}
 
+TOTAL_WORTH = Decimal(0.0)
+
 def main():
     global POOL_DICT
     os.system("clear")
@@ -36,6 +38,8 @@ def main():
         # take care of all the pools user is in! check settings.py
         handle_pools(client)
         
+        logging.info('----------------')
+        logging.info('Total Value: $%s' % TOTAL_WORTH)
         logging.info('----------------')
         logging.info('%s' % random.choice(FARMING_PHRASES))
         time.sleep(MINUTES_BETWEEN_UPDATES * 60)
@@ -97,6 +101,7 @@ def load_stats():
     return stats_data
 
 def handle_garden(client):
+    global UNCLAIMED_WORTH
     # loading previous session stats, so we know where we left off.
     action_index, claimed_counter, compound_counter = load_stats()
     # Get token price info
@@ -118,6 +123,7 @@ def handle_garden(client):
         new_plants = 0
     unclaimed_lp = garden_data.get('unclaimed_lp', 0)
     unclaimed_worth = garden_data.get('unclaimed_worth', 0)
+    UNCLAIMED_WORTH = decimal_round(unclaimed_worth, 2)
     # Report garden stats.
     logging.info('----------------')
     logging.info('Seeds: %s. Plants: %s.' % (seed_count, plant_count))
@@ -151,6 +157,8 @@ def handle_garden(client):
                 claimed_counter += 1
                 # only deposit to drip farm if setting is set in settings.py
                 if DEPOSIT_TO_DRIP_FARM is True:
+                    logging.info('Waiting 2 mins before depositing LP into farm...')
+                    time.sleep(60 * 2)
                     logging.info('Depositing seeds...')
                     response = client.deposit_drip_lp_farm(max_tries=MAX_TRIES)
                     if response and "status" in response and response["status"] == 1:
@@ -163,7 +171,7 @@ def handle_garden(client):
     save_stats(action_index, claimed_counter, compound_counter)
 
 def handle_pools(client):
-    global POOL_DICT
+    global POOL_DICT, TOTAL_WORTH
     if os.path.exists("pools.log") is True:
         POOL_DICT = load_json("pools.log")
         
@@ -188,11 +196,13 @@ def handle_pools(client):
             if pool_id == 2:
                 # drips/busd farm
                 usd_price = decimal_round(drip_busd_lp["price"] * amount, 2)
+                TOTAL_WORTH += usd_price
                 logging.info("%s: %s ($%s). " % (
                     current_pool_dict["symbol"], amount, usd_price))
             elif pool_id == 3:
                 # single stake dogs pool
                 usd_price = decimal_round(dogs_price * amount, 2)
+                TOTAL_WORTH += usd_price
                 logging.info("%s: %s ($%s). " % (
                     current_pool_dict["symbol"], amount, usd_price))
             else:
@@ -207,6 +217,7 @@ def handle_pools(client):
             if pool_id == 0:
                 # pigs in the pigpen.
                 usd_price = decimal_round(pigs_price * amount, 2)
+                TOTAL_WORTH += usd_price
                 logging.info("%s: %s ($%s). " % (
                     current_pool_dict["symbol"], amount, usd_price))
             else:

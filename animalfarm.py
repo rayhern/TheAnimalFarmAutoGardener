@@ -391,22 +391,18 @@ class AnimalFarmClient:
             item_dict.update({"%s:%s" % (i, pigs_or_dogs): {"symbol": symbol, "currency": currency}})
         return item_dict
     
-    def can_harvest(self, pool_id, pigs_or_dogs="pigs"):
+    def can_harvest(self, pool_id, pigs_or_dogs="pigs", max_tries=1):
         contract = self.get_pool_contract(pigs_or_dogs=pigs_or_dogs)
-        try:
-            resp = contract.functions.canHarvest(pool_id, to_checksum(self.address)).call()
-        except:
-            logging.debug(traceback.format_exc())
-            resp = None
+        resp = None
+        for _ in range(max_tries):
+            try:
+                resp = contract.functions.canHarvest(pool_id, to_checksum(self.address)).call()
+                if resp is not None:
+                    return resp
+            except:
+                logging.debug(traceback.format_exc())
+                resp = None
         return resp
-    
-    def bottom_price(self, pigs_or_dogs="pigs"):
-        try:
-            contract = self.get_token_contract("0xDBdC73B95cC0D5e7E99dC95523045Fc8d075Fb9e")
-            pool_info = contract.functions.balanceOf(self.address).call()
-            return pool_info
-        except:
-            logging.debug(traceback.format_exc())
             
     def deposit(self, pool_id, amount, pigs_or_dogs="pigs", max_tries=1):
         contract = self.get_pool_contract(pigs_or_dogs=pigs_or_dogs)
