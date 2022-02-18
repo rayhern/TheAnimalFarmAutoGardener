@@ -101,7 +101,7 @@ def load_stats():
     return stats_data
 
 def handle_garden(client):
-    global UNCLAIMED_WORTH
+    global TOTAL_WORTH
     # loading previous session stats, so we know where we left off.
     action_index, claimed_counter, compound_counter = load_stats()
     # Get token price info
@@ -123,7 +123,7 @@ def handle_garden(client):
         new_plants = 0
     unclaimed_lp = garden_data.get('unclaimed_lp', 0)
     unclaimed_worth = garden_data.get('unclaimed_worth', 0)
-    UNCLAIMED_WORTH = decimal_round(unclaimed_worth, 2)
+    TOTAL_WORTH = decimal_round(unclaimed_worth, 2)
     # Report garden stats.
     logging.info('----------------')
     logging.info('Seeds: %s. Plants: %s.' % (seed_count, plant_count))
