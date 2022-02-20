@@ -220,6 +220,11 @@ def handle_pools(client):
                 TOTAL_WORTH += usd_price
                 logging.info("%s: %s ($%s). " % (
                     current_pool_dict["symbol"], amount, usd_price))
+            elif pool_id == 19:
+                usd_price = decimal_round(amount, 2)
+                TOTAL_WORTH += usd_price
+                logging.info("%s: %s ($%s). " % (
+                    current_pool_dict["symbol"], amount, usd_price))
             else:
                 logging.info("%s: %s. " % (
                     current_pool_dict["symbol"], amount))
